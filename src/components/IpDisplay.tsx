@@ -1,21 +1,39 @@
 import React, {useState} from "react";
 
 const IPDisplay = () => {
-    const [ip, setIp] = useState([0,0,0,0]);
+    const [decimalIP, setDecimalIP] = useState([0,0,0,0]);
     
-    let [ipBits, setIpBits] = useState([
+    let [binaryIP, setBinaryIP] = useState([
         [false, false, false, false,false, false, false, false],
         [false, false, false, false,false, false, false, false],
         [false, false, false, false,false, false, false, false],
         [false, false, false, false,false, false, false, false]
     ]);
 
-    
-    let convertDecimalToBinary = () => {
-        
+    //Helper method to convert decimal number 
+    //Input: decimal number between 0 and 255
+    //Output: Array of boolean values of length 8
+    let convertDecimalToBinary = (octet: number): boolean[] => {
+        let result: boolean[] = [];
+        let temp = octet;
+        console.log(temp)
+
+        for(let i = 7; i >= 0; i--){
+            let bitValue = Math.pow(2, i);
+            
+            if(bitValue <= temp){
+                result.push(true);
+                temp -= bitValue;
+            }else{
+                result.push(false);
+            }            
+        }        
+
+        return result;
     }
     //Helper method to convert binary values to decimal values
-    //Input array of boolean values
+    //Input: array of boolean values of length 8
+    //Output: 
     let convertBinaryToDecimal = (octet: boolean[]): number => {
         let result = 0;
 
@@ -28,35 +46,51 @@ const IPDisplay = () => {
     //index: number : index of which part of the IP is being changed
     //returns method for which part of the iP is being changed
     let handleChangeDecimal = (index: number) => (e: React.ChangeEvent<HTMLInputElement>): void => {
-        let value = parseInt(e.target.value);
+        let decimalValue = parseInt(e.target.value);
         
-        if(value <= 255 && value >= 0){
-            let temp = [...ip];
-            temp[index] = value;
-            setIp(temp);
+        if(decimalValue > 255 || decimalValue < 0){
+            return;
         }
+        let temp = [...decimalIP];
+        temp[index] = decimalValue;
+        setDecimalIP(temp);
+        let binaryValue = convertDecimalToBinary(decimalValue);
+        
+        let tempBinaryIp = [...binaryIP];
+        tempBinaryIp[index] = binaryValue
+        setBinaryIP(tempBinaryIp);
     }
 
     let handleBitClicked = (octetIndex: number, bitIndex: number) => (e: React.ChangeEvent<HTMLInputElement>): void => {
-        let temp = [...ipBits];
+        let temp = [...binaryIP];
         temp[octetIndex][bitIndex] = !temp[octetIndex][bitIndex];
-        setIpBits(temp);
+        setBinaryIP(temp);
 
         let newDecimalOctet = convertBinaryToDecimal(temp[octetIndex]);
-        let tempDecimalIP = [...ip];
+        let tempDecimalIP = [...decimalIP];
         tempDecimalIP[octetIndex] = newDecimalOctet;
-        setIp(tempDecimalIP);
+        setDecimalIP(tempDecimalIP);
         
 
     } 
 
+    const displayDecimal = (): JSX.Element => {
+        return(
+            <div className="decimalDisplay">
+                {decimalIP.map((octet, index) => {
+                    return <input type="number" value={decimalIP[index]} onChange={handleChangeDecimal(index)}/>
+                })}
+            </div>
+        )
+    }
+
     let displayBinary = (): JSX.Element => {
         return(
-            <div>
-                {ipBits.map((octet, indexO) => 
+            <div className="binaryDisplay">
+                {binaryIP.map((octet, indexO) => 
                 <span>
                     {octet.map((bit, indexB) => { 
-                        return <input type="checkbox" checked={ipBits[indexO][indexB]} onChange={handleBitClicked(indexO, indexB)}/>
+                        return <input type="checkbox" checked={binaryIP[indexO][indexB]} onChange={handleBitClicked(indexO, indexB)}/>
                 })}
                 ||||||</span>  
             )}
@@ -74,15 +108,10 @@ const IPDisplay = () => {
     return(
     <div>
         <h2>IP Address</h2>
-        <div className="decimalDisplay">
-            <input type="text" value={ip[0]} onChange={handleChangeDecimal(0)} />
-            <input type="text" value={ip[1]} onChange={handleChangeDecimal(1)}/>
-            <input type="text" value={ip[2]} onChange={handleChangeDecimal(2)}/>
-            <input type="text" value={ip[3]} onChange={handleChangeDecimal(3)}/>
-        </div>
-        <div className="binaryDisplay">
-            {displayBinary()}
-        </div>
+
+        {displayDecimal()}
+        {displayBinary()}
+        
     </div>
     );
 }
